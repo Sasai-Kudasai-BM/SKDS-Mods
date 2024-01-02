@@ -9,10 +9,5 @@ dat
 *.log
 runModelConverter
 # run/maps
-run/rp
-run/auth
-run/generated
-run/config
-run-web/updates/launcher/java
-run-launcher
+run*
 out
