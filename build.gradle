@@ -1,0 +1,57 @@
+version = '1.0'
+group = 'net.skds'
+
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        maven {
+            name = 'sponge'
+            url = 'https://repo.spongepowered.org/maven'
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:6.+'
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+    }
+}
+
+allprojects {
+    apply plugin: 'java'
+    //apply plugin: 'java-library'
+}
+
+subprojects {
+    //build {
+    //}
+    sourceSets {
+        main {
+            java.srcDir 'src'
+            resources.srcDir 'resources'
+        }
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        implementation("com.google.code.gson:gson:2.8.9")
+        compileOnly 'org.projectlombok:lombok:1.18.24'
+        annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    }
+}
+
+
+tasks.register("buildAll", Copy) {
+    group "custom"
+    dependsOn "clean", subprojects.tasks.build
+    from "modules/skdscore/build/libs"
+    from "modules/wpo/build/libs"
+    from "modules/bpo/build/libs"
+    into "out/"
+    //doLast {
+    //    copy {
+    //        from "modules/mod-server/build/libs"
+    //        into "out/"
+    //    }
+    //}
+}

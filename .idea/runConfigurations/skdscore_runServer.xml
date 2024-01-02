@@ -1,0 +1,19 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="skdscore runServer" type="Application" factoryName="Application" singleton="false">
+    <option name="ALTERNATIVE_JRE_PATH" value="17" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+    <envs>
+      <env name="MOD_CLASSES" value="$PROJECT_DIR$/../mods\modules\skdscore\build\resources\main;$PROJECT_DIR$/../mods\modules\skdscore\build\classes\java\main" />
+      <env name="MCP_MAPPINGS" value="official_1.20.4" />
+    </envs>
+    <option name="MAIN_CLASS_NAME" value="net.minecraftforge.bootstrap.ForgeBootstrap" />
+    <module name="mods.skdscore.main" />
+    <option name="PROGRAM_PARAMETERS" value="--launchTarget forge_userdev_server --gameDir . --nogui --mixin.config mixins.skdscore.json" />
+    <option name="VM_PARAMETERS" value="-Dforge.logging.console.level=debug -Dforge.logging.markers=REGISTRIES -Dnet.minecraftforge.gradle.GradleStart.srg.srg-mcp=D:\code\mods\modules\skdscore\build\createSrgToMcp\output.srg -Dmixin.env.remapRefMap=true -Dmixin.env.refMapRemappingFile=D:\code\mods\modules\skdscore\build\createSrgToMcp\output.srg -Dforge.enabledGameTestNamespaces=skdscore -Dforge.enableGameTest=true -Djava.net.preferIPv6Addresses=system" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/run-skdscore-server" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+      <option name="Gradle.BeforeRunTask" enabled="true" tasks=":skdscore:prepareRunServerCompile" externalProjectPath="$PROJECT_DIR$" />
+    </method>
+  </configuration>
+</component>
