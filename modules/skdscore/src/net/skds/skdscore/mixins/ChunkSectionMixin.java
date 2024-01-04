@@ -30,7 +30,7 @@ public abstract class ChunkSectionMixin implements ChunkSectionGlue {
 		dataHolder.write(buf);
 	}
 
-	@Inject(method = "getSerializedSize", at = @At("RETURN"))
+	@Inject(method = "getSerializedSize", at = @At("RETURN"), cancellable = true)
 	void getSerializedSize(CallbackInfoReturnable<Integer> ci) {
 		int value = ci.getReturnValueI();
 		ci.setReturnValue(value + dataHolder.getExtraSize());

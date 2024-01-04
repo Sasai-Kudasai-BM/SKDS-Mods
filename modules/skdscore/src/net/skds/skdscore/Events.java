@@ -1,9 +1,11 @@
 package net.skds.skdscore;
 
 import net.minecraft.Util;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -47,8 +49,9 @@ public class Events {
 			return;
 		}
 		final LevelChunkSection[] sections = c.getSections();
+		ChunkPos cp = c.getPos();
 		for (int i = 0; i < sections.length; i++) {
-			((ChunkSectionGlue) sections[i]).getDataHolder().onLoad((LevelChunk) c);
+			((ChunkSectionGlue) sections[i]).getDataHolder().onLoad((LevelChunk) c, SectionPos.asLong(cp.x, c.getSectionYFromSectionIndex(i), cp.z));
 		}
 	}
 
@@ -79,7 +82,7 @@ public class Events {
 	}
 
 	@SubscribeEvent
-	public void loadChunk(ChunkDataEvent.Load e) {
+	public void loadChunkData(ChunkDataEvent.Load e) {
 		if (e.getStatus() != ChunkStatus.ChunkType.LEVELCHUNK) {
 			return;
 		}

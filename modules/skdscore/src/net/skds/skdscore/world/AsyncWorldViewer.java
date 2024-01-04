@@ -1,5 +1,6 @@
 package net.skds.skdscore.world;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -8,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.material.FluidState;
+import net.skds.skdscore.mixinglue.ChunkSectionGlue;
 import net.skds.skdscore.mixins.ChunkSourceInvoker;
 
 public class AsyncWorldViewer {
@@ -21,6 +23,10 @@ public class AsyncWorldViewer {
 		this.world = world;
 	}
 
+	public BlockState getBlockState(BlockPos pos) {
+		return getBlockState(pos.getX(), pos.getY(), pos.getZ());
+	}
+
 	public BlockState getBlockState(int x, int y, int z) {
 		if (world.isOutsideBuildHeight(y)) {
 			return voidState;
@@ -32,6 +38,10 @@ public class AsyncWorldViewer {
 		return section.getBlockState(x & 15, y & 15, z & 15);
 	}
 
+	public FluidState getFluidState(BlockPos pos) {
+		return getFluidState(pos.getX(), pos.getY(), pos.getZ());
+	}
+
 	public FluidState getFluidState(int x, int y, int z) {
 		if (world.isOutsideBuildHeight(y)) {
 			return voidFluidState;
@@ -41,6 +51,18 @@ public class AsyncWorldViewer {
 			return null;
 		}
 		return section.getFluidState(x & 15, y & 15, z & 15);
+	}
+
+	public <T extends ChunkSectionData> T getSectionDataForBlock(SectionDataRegistryEntry<T> type, BlockPos pos) {
+		return getSectionDataForBlock(type, pos.getX(), pos.getY(), pos.getZ());
+	}
+
+	public <T extends ChunkSectionData> T getSectionDataForBlock(SectionDataRegistryEntry<T> type, int x, int y, int z) {
+		LevelChunkSection section = getSection(x >> 4, world.getSectionIndex(y), z >> 4);
+		if (section == null) {
+			return null;
+		}
+		return ((ChunkSectionGlue) section).getDataHolder().getData(type);
 	}
 
 	public LevelChunkSection getSection(int cx, int cy, int cz) {

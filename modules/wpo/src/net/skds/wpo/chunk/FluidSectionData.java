@@ -2,15 +2,18 @@ package net.skds.wpo.chunk;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.LongArrayTag;
-import net.minecraft.nbt.NbtUtils;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.shorts.Short2IntMap;
+import it.unimi.dsi.fastutil.shorts.Short2IntOpenHashMap;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.*;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
@@ -21,6 +24,7 @@ import net.skds.lib.utils.Holders;
 import net.skds.skdscore.world.ChunkSectionData;
 import net.skds.skdscore.world.SectionDataHolder;
 import net.skds.wpo.fluid.DirectFluidSupl;
+import net.skds.wpo.world.CustomWorldTicks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +36,45 @@ public class FluidSectionData implements ChunkSectionData {
 	private static final FluidState defaultValue = Fluids.EMPTY.defaultFluidState();
 
 	private final PalettedStorage<FluidState> storage;
+	private final SectionDataHolder holder;
+	private final Short2IntMap ticks;
+
+	private boolean tickable;
 
 	public FluidSectionData(SectionDataHolder holder) {
+		this.holder = holder;
 		this.storage = new PalettedStorage<>(4096, defaultValue, supl);
+		this.ticks = new Short2IntOpenHashMap(0, .9f);
+		this.ticks.defaultReturnValue(-1);
+	}
+
+	@Override
+	public void onLoad(LevelChunk chunk, long sectionPos) {
+		if (isTickable() && chunk.getLevel() instanceof ServerLevel w) {
+			((CustomWorldTicks<Fluid>) w.getFluidTicks()).tickSections.put(sectionPos, this);
+		}
+	}
+
+	public boolean isTickable() {
+		return tickable = !ticks.isEmpty();
+	}
+
+	public boolean addTick(BlockPos pos, int time) {
+		return addTick(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15, time);
+	}
+
+	public boolean addTick(int x, int y, int z, int time) {
+		int position = SectionDataHolder.getIndex(x, y, z);
+		if (ticks.put((short) position, time) == -1) {
+			boolean last = tickable;
+			tickable = true;
+			return !last;
+		}
+		return false;
+	}
+
+	public FluidState getFluidState(int x, int y, int z) {
+		return holder.getSection().getBlockState(x, y, z).getFluidState();
 	}
 
 	@Override
@@ -77,33 +117,51 @@ public class FluidSectionData implements ChunkSectionData {
 	@Override
 	public CompoundTag serializeNBT() {
 		final CompoundTag nbt = new CompoundTag();
+		if (!ticks.isEmpty()) {
+			final IntArrayList tickList = new IntArrayList();
+			for (Short2IntMap.Entry e : this.ticks.short2IntEntrySet()) {
+				tickList.add(e.getShortKey());
+				tickList.add(e.getIntValue());
+			}
+			nbt.put("ticks", new IntArrayTag(tickList));
+		}
 		final ListTag states = new ListTag();
 		if (storage.isSingle()) {
 			states.add(NbtUtils.writeFluidState(storage.getDefaultValue()));
 		} else {
-			final Int2IntMap values = new Int2IntOpenHashMap(4);
-			final Holders.IntHolder c = new Holders.IntHolder(-1);
-			final PalettedData data = storage.getData();
-			for (int i = 0; i < 4096; i++) {
-				int v = data.getValue(i);
-				values.computeIfAbsent(v, v2 -> {
-					states.add(NbtUtils.writeFluidState(supl.get(v)));
-					return c.increment(1);
-				});
-			}
-			final PalettedData remappedData = new PalettedData(PalettedStorage.calcBits(values.size()), 4096);
-			for (int i = 0; i < 4096; i++) {
-				int v = data.getValue(i);
-				remappedData.setValue(i, values.get(v));
-			}
+			final PalettedData remappedData = getRemappedData(states);
 			nbt.put("data", new LongArrayTag(remappedData.words));
 		}
 		nbt.put("states", states);
 		return nbt;
 	}
 
+	private PalettedData getRemappedData(ListTag states) {
+		final Int2IntMap values = new Int2IntOpenHashMap(4);
+		final Holders.IntHolder c = new Holders.IntHolder(-1);
+		final PalettedData data = storage.getData();
+		for (int i = 0; i < 4096; i++) {
+			int v = data.getValue(i);
+			values.computeIfAbsent(v, v2 -> {
+				states.add(NbtUtils.writeFluidState(supl.get(v)));
+				return c.increment(1);
+			});
+		}
+		final PalettedData remappedData = new PalettedData(PalettedStorage.calcBits(values.size()), 4096);
+		for (int i = 0; i < 4096; i++) {
+			int v = data.getValue(i);
+			remappedData.setValue(i, values.get(v));
+		}
+		return remappedData;
+	}
+
 	@Override
 	public void deserializeNBT(CompoundTag nbt) {
+		final int[] tickArray = nbt.getIntArray("ticks");
+		for (int i = 0; i < tickArray.length; ) {
+			this.ticks.put((short) tickArray[i++], tickArray[i++]);
+		}
+
 		ListTag statesNbt = nbt.getList("states", 10);
 		List<FluidState> states = new ArrayList<>();
 		for (int i = 0; i < statesNbt.size(); i++) {

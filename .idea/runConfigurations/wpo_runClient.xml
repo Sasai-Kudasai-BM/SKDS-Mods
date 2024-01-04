@@ -8,8 +8,8 @@
     </envs>
     <option name="MAIN_CLASS_NAME" value="net.minecraftforge.bootstrap.ForgeBootstrap" />
     <module name="mods.wpo.main" />
-    <option name="PROGRAM_PARAMETERS" value="--launchTarget forge_userdev_client --version MOD_DEV --assetIndex 12 --assetsDir C:\Users\Sergey\.gradle\caches\forge_gradle\assets --gameDir . --mixin.config mixins.wpo.json" />
-    <option name="VM_PARAMETERS" value="-Dforge.logging.console.level=debug -Dforge.logging.markers=REGISTRIES -Dnet.minecraftforge.gradle.GradleStart.srg.srg-mcp=D:\code\mods\modules\wpo\build\createSrgToMcp\output.srg -Dmixin.env.remapRefMap=true -Dmixin.env.refMapRemappingFile=D:\code\mods\modules\wpo\build\createSrgToMcp\output.srg -Dforge.enabledGameTestNamespaces=wpo -Dforge.enableGameTest=true -Djava.net.preferIPv6Addresses=system -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" />
+    <option name="PROGRAM_PARAMETERS" value="--launchTarget forge_userdev_client --version MOD_DEV --assetIndex 12 --assetsDir C:\Users\Sergey\.gradle\caches\forge_gradle\assets --gameDir . --mixin.config mixins.wpo.json --mixin.config mixins.skdscore.json --username Sasai_Kudasai_BM --uuid bdfbc8ef-d786-417a-9885-af9bc1aa67e6" />
+    <option name="VM_PARAMETERS" value="-Dforge.logging.console.level=debug -Dforge.logging.markers=REGISTRIES -Dnet.minecraftforge.gradle.GradleStart.srg.srg-mcp=D:\code\mods\modules\wpo\build\createSrgToMcp\output.srg -Dmixin.env.remapRefMap=true -Dmixin.debug.export=true -Dmixin.env.refMapRemappingFile=D:\code\mods\modules\wpo\build\createSrgToMcp\output.srg -Dforge.enabledGameTestNamespaces=wpo -Dforge.enableGameTest=true -Djava.net.preferIPv6Addresses=system -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/run-wpo-client" />
     <method v="2">
       <option name="Make" enabled="true" />

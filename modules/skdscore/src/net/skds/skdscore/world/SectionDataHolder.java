@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraftforge.common.util.INBTSerializable;
+import net.skds.skdscore.utils.WorldSide;
 
 public class SectionDataHolder implements INBTSerializable<CompoundTag> {
 
@@ -14,10 +15,15 @@ public class SectionDataHolder implements INBTSerializable<CompoundTag> {
 	private final LevelChunkSection section;
 
 	private Link first;
+	@Getter
 	private Level world;
 
 	public SectionDataHolder(LevelChunkSection section) {
 		this.section = section;
+	}
+
+	public static int getIndex(int x, int y, int z) {
+		return (y << 4 | z) << 4 | x;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -40,8 +46,13 @@ public class SectionDataHolder implements INBTSerializable<CompoundTag> {
 		return value;
 	}
 
-	public void onLoad(LevelChunk chunk) {
+	public void onLoad(LevelChunk chunk, long sectionPos) {
 		this.world = chunk.getLevel();
+		Link lnk = first;
+		while (lnk != null) {
+			lnk.value.onLoad(chunk, sectionPos);
+			lnk = lnk.next;
+		}
 	}
 
 	public int getExtraSize() {
@@ -78,15 +89,19 @@ public class SectionDataHolder implements INBTSerializable<CompoundTag> {
 		int size = 0;
 		Link lnk = first;
 		while (lnk != null) {
-			size++;
+			if (lnk.type.side == WorldSide.BOTH) {
+				size++;
+			}
 			lnk = lnk.next;
 		}
 		buf.writeByte(size);
 		if (size > 0) {
 			lnk = first;
 			while (lnk != null) {
-				buf.writeVarInt(lnk.type.index);
-				lnk.value.write(buf);
+				if (lnk.type.side == WorldSide.BOTH) {
+					buf.writeVarInt(lnk.type.index);
+					lnk.value.write(buf);
+				}
 				lnk = lnk.next;
 			}
 		}
