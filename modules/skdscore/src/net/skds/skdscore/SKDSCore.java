@@ -3,6 +3,7 @@ package net.skds.skdscore;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -19,6 +20,8 @@ public class SKDSCore {
 	public static final String MOD_ID = "skdscore";
 	public static final String MOD_NAME = "SKDS Core";
 	public static final String MOD_VERSION = "1.0.0";
+
+	public static final IEventBus EVENT_BUS = BusBuilder.builder().useModLauncher().build();
 
 	public SKDSCore() {
 		IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();

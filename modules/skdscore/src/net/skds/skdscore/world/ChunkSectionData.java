@@ -1,5 +1,6 @@
 package net.skds.skdscore.world;
 
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -13,5 +14,7 @@ public interface ChunkSectionData extends INBTSerializable<CompoundTag> {
 
 	void write(FriendlyByteBuf buf);
 
-	void onLoad(LevelChunk chunk, long sectionPos);
+	void onLoad(LevelChunk chunk, SectionPos sectionPos);
+
+	void onUnload(LevelChunk chunk, SectionPos sectionPos);
 }

@@ -51,4 +51,14 @@ public class DirectFluidSupl implements PalettedStorage.DirectSupplier<FluidStat
 	public int size() {
 		return fluidArray.length;
 	}
+
+	@Override
+	public int bitThreshold() {
+		return 0;
+	}
+
+	@Override
+	public int minBits() {
+		return 0;
+	}
 }

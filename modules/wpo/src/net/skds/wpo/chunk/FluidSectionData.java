@@ -2,11 +2,12 @@ package net.skds.wpo.chunk;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.shorts.Short2IntMap;
-import it.unimi.dsi.fastutil.shorts.Short2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.*;
+import net.minecraft.core.SectionPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -25,6 +26,7 @@ import net.skds.skdscore.world.ChunkSectionData;
 import net.skds.skdscore.world.SectionDataHolder;
 import net.skds.wpo.fluid.DirectFluidSupl;
 import net.skds.wpo.world.CustomWorldTicks;
+import net.skds.wpo.world.FluidTickTask;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,40 +39,37 @@ public class FluidSectionData implements ChunkSectionData {
 
 	private final PalettedStorage<FluidState> storage;
 	private final SectionDataHolder holder;
-	private final Short2IntMap ticks;
-
-	private boolean tickable;
+	private List<FluidTickTask> ticks;
 
 	public FluidSectionData(SectionDataHolder holder) {
 		this.holder = holder;
 		this.storage = new PalettedStorage<>(4096, defaultValue, supl);
-		this.ticks = new Short2IntOpenHashMap(0, .9f);
-		this.ticks.defaultReturnValue(-1);
+		//this.ticks = new Short2IntOpenHashMap(0, .9f);
 	}
 
 	@Override
-	public void onLoad(LevelChunk chunk, long sectionPos) {
-		if (isTickable() && chunk.getLevel() instanceof ServerLevel w) {
-			((CustomWorldTicks<Fluid>) w.getFluidTicks()).tickSections.put(sectionPos, this);
+	public void onLoad(LevelChunk chunk, SectionPos sectionPos) {
+		if (ticks != null && !ticks.isEmpty() && chunk.getLevel() instanceof ServerLevel w) {
+			var tickTasks = ((CustomWorldTicks) w.getFluidTicks());
+			for (FluidTickTask task : ticks) {
+				tickTasks.addTickTask(task);
+			}
+			ticks = null;
 		}
 	}
 
-	public boolean isTickable() {
-		return tickable = !ticks.isEmpty();
-	}
-
-	public boolean addTick(BlockPos pos, int time) {
-		return addTick(pos.getX() & 15, pos.getY() & 15, pos.getZ() & 15, time);
-	}
-
-	public boolean addTick(int x, int y, int z, int time) {
-		int position = SectionDataHolder.getIndex(x, y, z);
-		if (ticks.put((short) position, time) == -1) {
-			boolean last = tickable;
-			tickable = true;
-			return !last;
+	@Override
+	public void onUnload(LevelChunk chunk, SectionPos sectionPos) {
+		if (chunk.getLevel() instanceof ServerLevel w) {
+			var tickTasks = ((CustomWorldTicks) w.getFluidTicks()).tickTasks;
+			this.ticks = new ArrayList<>();
+			tickTasks.stream()
+					.filter(t -> SectionPos.asLong(t.pos) == sectionPos.asLong())
+					.forEach(t -> {
+						ticks.add(t);
+						tickTasks.remove(t);
+					});
 		}
-		return false;
 	}
 
 	public FluidState getFluidState(int x, int y, int z) {
@@ -117,13 +116,15 @@ public class FluidSectionData implements ChunkSectionData {
 	@Override
 	public CompoundTag serializeNBT() {
 		final CompoundTag nbt = new CompoundTag();
-		if (!ticks.isEmpty()) {
-			final IntArrayList tickList = new IntArrayList();
-			for (Short2IntMap.Entry e : this.ticks.short2IntEntrySet()) {
-				tickList.add(e.getShortKey());
-				tickList.add(e.getIntValue());
+		if (ticks != null && !ticks.isEmpty()) {
+			ListTag list = new ListTag();
+			for (FluidTickTask t : this.ticks) {
+				CompoundTag taskTag = new CompoundTag();
+				taskTag.putString("id", ForgeRegistries.FLUIDS.getKey(t.fluid).toString());
+				taskTag.putLong("pos", t.pos.asLong());
+				taskTag.putInt("time", t.startTick);
 			}
-			nbt.put("ticks", new IntArrayTag(tickList));
+			nbt.put("ticks", list);
 		}
 		final ListTag states = new ListTag();
 		if (storage.isSingle()) {
@@ -157,9 +158,19 @@ public class FluidSectionData implements ChunkSectionData {
 
 	@Override
 	public void deserializeNBT(CompoundTag nbt) {
-		final int[] tickArray = nbt.getIntArray("ticks");
-		for (int i = 0; i < tickArray.length; ) {
-			this.ticks.put((short) tickArray[i++], tickArray[i++]);
+		final ListTag tickList = nbt.getList("ticks", 10);
+		if (!tickList.isEmpty()) {
+			this.ticks = new ArrayList<>(tickList.size());
+			for (int i = 0; i < tickList.size(); i++) {
+				CompoundTag tickTag = tickList.getCompound(i);
+				Fluid f = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(tickTag.getString("id")));
+				if (f == null) {
+					continue;
+				}
+				BlockPos pos = BlockPos.of(tickTag.getLong("pos"));
+				int time = tickTag.getInt("time");
+				this.ticks.add(new FluidTickTask(pos, f, time));
+			}
 		}
 
 		ListTag statesNbt = nbt.getList("states", 10);

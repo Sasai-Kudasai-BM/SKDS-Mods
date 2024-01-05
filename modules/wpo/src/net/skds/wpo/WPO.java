@@ -7,6 +7,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.skds.skdscore.SKDSCore;
 import net.skds.skdscore.utils.WorldSide;
 import net.skds.skdscore.world.SectionDataRegistry;
 import net.skds.skdscore.world.SectionDataRegistryEntry;
@@ -27,6 +28,7 @@ public class WPO {
 		modEventBus.addListener(this::commonSetup);
 		ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, WPOConfig.SPEC);
 		MinecraftForge.EVENT_BUS.register(new Events());
+		SKDSCore.EVENT_BUS.register(new CustomEvents());
 		WPOItems.init();
 	}
 

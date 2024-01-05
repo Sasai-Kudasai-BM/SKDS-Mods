@@ -1,6 +1,7 @@
 package net.skds.skdscore.world;
 
 import lombok.Getter;
+import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
@@ -46,11 +47,20 @@ public class SectionDataHolder implements INBTSerializable<CompoundTag> {
 		return value;
 	}
 
-	public void onLoad(LevelChunk chunk, long sectionPos) {
+	public void onLoad(LevelChunk chunk, SectionPos sectionPos) {
 		this.world = chunk.getLevel();
 		Link lnk = first;
 		while (lnk != null) {
 			lnk.value.onLoad(chunk, sectionPos);
+			lnk = lnk.next;
+		}
+	}
+
+	public void onUnload(LevelChunk chunk, SectionPos sectionPos) {
+		this.world = chunk.getLevel();
+		Link lnk = first;
+		while (lnk != null) {
+			lnk.value.onUnload(chunk, sectionPos);
 			lnk = lnk.next;
 		}
 	}

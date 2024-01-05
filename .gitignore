@@ -11,3 +11,6 @@ runModelConverter
 # run/maps
 run*
 out
+/run-wpo-client/
+/run-thinkfast-client/
+/run-skdscore-client/

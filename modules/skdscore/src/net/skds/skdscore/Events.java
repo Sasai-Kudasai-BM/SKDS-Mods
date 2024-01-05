@@ -5,6 +5,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkStatus;
@@ -17,6 +18,7 @@ import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.skds.skdscore.events.WorldAfterTickEvent;
 import net.skds.skdscore.mixinglue.ChunkSectionGlue;
 import net.skds.skdscore.utils.ServerInfo;
 import net.skds.skdscore.world.SectionDataHolder;
@@ -51,7 +53,20 @@ public class Events {
 		final LevelChunkSection[] sections = c.getSections();
 		ChunkPos cp = c.getPos();
 		for (int i = 0; i < sections.length; i++) {
-			((ChunkSectionGlue) sections[i]).getDataHolder().onLoad((LevelChunk) c, SectionPos.asLong(cp.x, c.getSectionYFromSectionIndex(i), cp.z));
+			((ChunkSectionGlue) sections[i]).getDataHolder().onLoad((LevelChunk) c, SectionPos.of(cp, c.getSectionYFromSectionIndex(i)));
+		}
+	}
+
+	@SubscribeEvent
+	public void unloadChunk(ChunkEvent.Unload e) {
+		ChunkAccess c = e.getChunk();
+		if (c.getClass() != LevelChunk.class) {
+			return;
+		}
+		final LevelChunkSection[] sections = c.getSections();
+		ChunkPos cp = c.getPos();
+		for (int i = 0; i < sections.length; i++) {
+			((ChunkSectionGlue) sections[i]).getDataHolder().onUnload((LevelChunk) c, SectionPos.of(cp, c.getSectionYFromSectionIndex(i)));
 		}
 	}
 
@@ -110,6 +125,8 @@ public class Events {
 	}
 
 	public static void serverTickEnd(MinecraftServer server, BooleanSupplier bs) {
-
+		for (ServerLevel w : server.getAllLevels()) {
+			SKDSCore.EVENT_BUS.post(new WorldAfterTickEvent(w));
+		}
 	}
 }
