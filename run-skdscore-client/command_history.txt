@@ -1,4 +1,0 @@
-/debugpath
-/debugpath ~ ~ ~
-/debug start
-/debug stop
